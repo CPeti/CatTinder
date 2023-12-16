@@ -1,125 +1,316 @@
+// ignore_for_file: depend_on_referenced_packages
+
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:swipe_cards/swipe_cards.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_svg/flutter_svg.dart';
+
+String apiKey =
+    'your_api_key_here'; // Get your API key from https://thecatapi.com/ and paste it here
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Cat Tinder',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+        primarySwatch:
+            Colors.pink, // Change the primary color of the app to pink
+        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: CatTinderMainPage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
+class CatTinderMainPage extends StatefulWidget {
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _CatTinderMainPageState createState() => _CatTinderMainPageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _CatTinderMainPageState extends State<CatTinderMainPage> {
+  List<SwipeItem> _swipeItems = [];
+  late MatchEngine _matchEngine;
+  GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey();
+  int currentIndex = 0;
+  int limit = 10;
+  List<dynamic> catImages = [];
 
-  void _incrementCounter() {
+  @override
+  void initState() {
+    super.initState();
+    fetchCatImagesInit();
+  }
+
+  Future<void> fetchCatImages() async {
+    var response = await http.get(Uri.parse(
+        'https://api.thecatapi.com/v1/images/search?limit=$limit&api_key=$apiKey'));
+
+    if (response.statusCode == 200) {
+      catImages = json.decode(response.body);
+      //precache all the images
+      catImages.forEach((catImage) {
+        precacheImage(NetworkImage(catImage['url']), context);
+      });
+    } else {
+      // Handle the case when the API is not reachable or returns a non-200 status code
+      print('Failed to load cat images');
+    }
+  }
+
+  //update state function
+  void updateState() {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _swipeItems = catImages.map((catImage) {
+        return SwipeItem(
+          content: Content(url: catImage['url']),
+          likeAction: () {
+            currentIndex++;
+            if (currentIndex == limit - 1) {
+              fetchCatImages();
+            }
+            //print("Liked ${catImage['id']}");
+          },
+          nopeAction: () {
+            currentIndex++;
+            if (currentIndex == limit - 1) {
+              fetchCatImages();
+            }
+            //print("Nope ${catImage['id']}");
+          },
+        );
+      }).toList();
+
+      _matchEngine = MatchEngine(swipeItems: _swipeItems);
     });
+  }
+
+  Future<void> fetchCatImagesInit() async {
+    var response = await http.get(Uri.parse(
+        'https://api.thecatapi.com/v1/images/search?limit=$limit&api_key=$apiKey'));
+
+    if (response.statusCode == 200) {
+      catImages = json.decode(response.body);
+      //precache all the images
+      catImages.forEach((catImage) {
+        precacheImage(NetworkImage(catImage['url']), context);
+      });
+    } else {
+      // Handle the case when the API is not reachable or returns a non-200 status code
+      print('Failed to load cat images');
+    }
+    //print(catImages.length);
+    updateState();
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+      key: _scaffoldKey,
+      //appBar: AppBar(
+      //  title: Text('Cat photos'),
+      //  leading: const Icon(Icons.favorite, color: Colors.white),
+      //  backgroundColor: Colors.pink[200],
+      //),
+      body: SafeArea(
+        child: Stack(children: [
+          // Gradient background
+
+          Container(
+            //height: MediaQuery.of(context).size.height / 4 * 3,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color.fromARGB(255, 255, 220, 239),
+                  Colors.white
+                ], // Gradient from pink to white
+              ),
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
+          ),
+          Column(
+            children: [
+              Align(
+                alignment: Alignment.topCenter,
+                child: Container(
+                  margin: const EdgeInsets.only(top: 30, bottom: 0),
+                  child: SvgPicture.asset('images/top.svg', width: 80
+                      // Optionally set height if needed
+                      ),
+                ),
+              ),
+              Expanded(
+                // Use Expanded to take up all available space except for the BottomAppBar
+                child: _swipeItems.isNotEmpty
+                    ? Center(
+                        child: SwipeCards(
+                          matchEngine: _matchEngine,
+                          itemBuilder: (BuildContext context, int index) {
+                            // check if card is on top of stack
+                            return Visibility(
+                              visible: index == currentIndex,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 20.0), // Add horizontal space
+                                child: Align(
+                                  alignment: Alignment.center,
+                                  child: IntrinsicWidth(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors
+                                            .white, // Set the background color to white
+                                        borderRadius: BorderRadius.circular(
+                                            10.0), // Match the ClipRRect's radius
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.grey.withOpacity(
+                                                0.5), // Shadow color and opacity
+                                            spreadRadius:
+                                                2, // Extent of the shadow
+                                            blurRadius: 8, // Blur effect
+                                            offset: const Offset(0,
+                                                3), // Changes position of shadow
+                                          ),
+                                        ],
+                                      ),
+                                      child: ClipRRect(
+                                        borderRadius:
+                                            BorderRadius.circular(10.0),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            ClipRRect(
+                                              borderRadius: BorderRadius.circular(
+                                                  10.0), // Set the desired radius for corners of the image
+                                              child: Container(
+                                                constraints: BoxConstraints(
+                                                  maxHeight: MediaQuery.of(
+                                                              context)
+                                                          .size
+                                                          .height /
+                                                      2.2, // Set the maximum height for the image
+                                                ),
+                                                //load precached image
+                                                child: Image(
+                                                  image: NetworkImage(
+                                                      _swipeItems[index]
+                                                          .content
+                                                          .url),
+                                                  fit: BoxFit.cover,
+                                                ),
+                                              ),
+                                            ),
+                                            Container(
+                                              padding: const EdgeInsets.all(
+                                                  10.0), // Add padding inside the card
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: <Widget>[
+                                                  IconButton(
+                                                    icon: SvgPicture.asset(
+                                                        'images/x.svg'),
+                                                    onPressed: () {
+                                                      // Dislike action
+                                                      _matchEngine.currentItem
+                                                          ?.nope();
+                                                    },
+                                                  ),
+                                                  IconButton(
+                                                    icon: SvgPicture.asset(
+                                                        'images/heart.svg'),
+                                                    onPressed: () {
+                                                      // Like action
+                                                      _matchEngine.currentItem
+                                                          ?.like();
+                                                    },
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                          onStackFinished: () {
+                            currentIndex = 0;
+                            // Load more images
+                            updateState();
+                          },
+                        ),
+                      )
+                    : const CircularProgressIndicator(), // Show a loading indicator while the images are being fetched
+              ),
+              Container(
+                height: 100,
+                margin: const EdgeInsets.symmetric(
+                    horizontal: 10), // Adds horizontal margin
+                decoration: BoxDecoration(
+                  color: Colors.pink[200], // Sets the background color
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(10), // Top left corner
+                    topRight: Radius.circular(10), // Top right corner
+                  ),
+                ),
+                child: BottomAppBar(
+                  color:
+                      Colors.transparent, // Make BottomAppBar color transparent
+                  elevation: 0, // Remove shadow if not needed
+                  child: Row(
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    //align along y axis
+                    crossAxisAlignment: CrossAxisAlignment.end,
+
+                    children: <Widget>[
+                      IconButton(
+                        icon: SvgPicture.asset(
+                          'images/disliked.svg',
+                          height: 50,
+                        ),
+                        onPressed: () {
+                          _matchEngine.currentItem?.nope();
+                        },
+                      ),
+                      IconButton(
+                        icon: SvgPicture.asset(
+                          'images/home.svg',
+                          height: 50,
+                        ),
+                        onPressed: () {
+                          // Home action
+                        },
+                      ),
+                      IconButton(
+                        icon: SvgPicture.asset('images/liked.svg', height: 60),
+                        onPressed: () {
+                          _matchEngine.currentItem?.like();
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ]),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
+}
+
+class Content {
+  final String url;
+  Content({required this.url});
 }

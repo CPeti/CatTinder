@@ -45,7 +45,10 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^2.0.0
+  flutter_lints: ^3.0.1
+  swipe_cards: ^2.0.0+1
+  http: ^1.1.2
+  flutter_svg: ^0.22.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -57,6 +60,13 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+      - images/heart.svg
+      - images/x.svg
+      - images/top.svg
+      - images/liked.svg
+      - images/disliked.svg
+      - images/home.svg
 
   # To add assets to your application, add an assets section, like this:
   # assets:
