@@ -2,11 +2,18 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'pages/homepage.dart';
+import 'pages/likedpage.dart';
+import 'pages/dislikedpage.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(
+    ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -32,9 +39,9 @@ class _MainPageState extends State<MainPage> {
 
   // List of pages to display
   final List<Widget> _pages = [
-    Page1(),
+    DislikedImagesPage(),
     HomePage(),
-    Page3(),
+    LikedImagesPage(),
   ];
 
   void _onItemTapped(int index) {
@@ -51,7 +58,22 @@ class _MainPageState extends State<MainPage> {
       //),
       body: SafeArea(
         child: Center(
-          child: _pages.elementAt(_selectedIndex),
+          child: Stack(children: [
+            Container(
+              //height: MediaQuery.of(context).size.height / 4 * 3,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color.fromARGB(255, 255, 220, 239),
+                    Colors.white
+                  ], // Gradient from pink to white
+                ),
+              ),
+            ),
+            _pages.elementAt(_selectedIndex),
+          ]),
         ),
       ),
       bottomNavigationBar: Container(
