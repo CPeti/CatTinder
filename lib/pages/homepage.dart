@@ -146,7 +146,7 @@ class _HomePageState extends ConsumerState<HomePage>
         child: Align(
           alignment: Alignment.center,
           child: Text(
-            "To like picture of cat click on heart, or swipe right",
+            "To like picture of cat click on heart",
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 20,

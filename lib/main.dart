@@ -3,12 +3,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+//if targeting windows, import sqflite_ffi.dart
+//import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'pages/homepage.dart';
 import 'pages/likedpage.dart';
 import 'pages/dislikedpage.dart';
 
-void main() {
+Future main() async {
+  //if targeting windows, initialize sqflite_ffi
+  //sqfliteFfiInit();
+  //databaseFactory = databaseFactoryFfi;
   runApp(
     ProviderScope(
       child: MyApp(),
